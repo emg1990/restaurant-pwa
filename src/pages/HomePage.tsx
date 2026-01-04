@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Box, Grid, Card, CardContent, CardActions, Button, Tabs, Tab, IconButton, CardMedia, Avatar } from '@mui/material';
+import { Container, Typography, Box, Grid, Card, CardContent, CardActions, IconButton, CardMedia, Avatar } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import FastfoodIcon from '@mui/icons-material/Fastfood';
@@ -69,7 +69,7 @@ const HomePage: React.FC = () => {
         />
       );
     }
-    
+
     let iconElement = <RestaurantIcon sx={{ fontSize: 60 }} />;
     if (item.icon) {
       const iconObj = AVAILABLE_ICONS.find(i => i.name === item.icon);
@@ -92,23 +92,29 @@ const HomePage: React.FC = () => {
           Menu
         </Typography>
 
-        <Tabs
-          value={selectedCategory}
-          onChange={(_, newValue) => setSelectedCategory(newValue)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{ mb: 4 }}
-        >
-          {categories.map((cat) => (
-            <Tab 
-              key={cat.id} 
-              label={cat.name} 
-              value={cat.id} 
-              icon={cat.thumbnail ? <Avatar src={cat.thumbnail} alt={cat.name} sx={{ width: 40, height: 40 }} /> : undefined}
-              iconPosition="start"
-            />
-          ))}
-        </Tabs>
+        <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', mb: 4, py: 1 }}>
+          {categories.map((cat) => {
+            let iconElement = <RestaurantIcon sx={{ fontSize: 40 }} />;
+            if (cat.icon) {
+              const match = AVAILABLE_ICONS.find(i => i.name === cat.icon);
+              if (match) iconElement = match.icon;
+            }
+            return (
+              <Box
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                sx={{ minWidth: 120, textAlign: 'center', cursor: 'pointer' }}
+              >
+                {cat.thumbnail ? (
+                  <Avatar src={cat.thumbnail} alt={cat.name} sx={{ width: 72, height: 72, mx: 'auto' }} />
+                ) : (
+                  <Avatar sx={{ width: 72, height: 72, mx: 'auto', bgcolor: 'action.hover' }}>{iconElement}</Avatar>
+                )}
+                <Typography variant="subtitle1" sx={{ mt: 1, fontWeight: 600 }}>{cat.name}</Typography>
+              </Box>
+            );
+          })}
+        </Box>
 
         <Grid container spacing={3}>
           {filteredItems.map((item) => {
@@ -116,33 +122,31 @@ const HomePage: React.FC = () => {
             return (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
                 <Card>
-                  {renderItemImage(item)}
-                  <CardContent>
-                    <Typography variant="h6" component="div">
-                      {item.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.description}
-                    </Typography>
-                    <Typography variant="h6" color="primary" sx={{ mt: 2 }}>
-                      ${item.price.toFixed(2)}
-                    </Typography>
-                  </CardContent>
+                    <div onClick={() => handleAddToCart(item)} style={{ cursor: 'pointer' }}>
+                    {renderItemImage(item)}
+                    <CardContent>
+                      <Typography variant="h6" component="div">
+                        {item.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.description}
+                      </Typography>
+                      <Typography variant="h6" color="primary" sx={{ mt: 2 }}>
+                        ${item.price.toFixed(2)}
+                      </Typography>
+                    </CardContent>
+                  </div>
                   <CardActions>
-                    {quantity > 0 ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <IconButton size="small" onClick={() => updateQuantity(item.id, quantity - 1)} color="primary">
-                          <RemoveIcon />
+                    {quantity > 0 && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, width: '100%' }}>
+                        <IconButton size="large" onClick={() => updateQuantity(item.id, quantity - 1)} color="primary">
+                          <RemoveIcon fontSize="large" />
                         </IconButton>
-                        <Typography sx={{ minWidth: '20px', textAlign: 'center', fontWeight: 'bold' }}>{quantity}</Typography>
-                        <IconButton size="small" onClick={() => updateQuantity(item.id, quantity + 1)} color="primary">
-                          <AddIcon />
+                        <Typography sx={{ minWidth: '40px', textAlign: 'center', fontWeight: 'bold', fontSize: '2rem' }}>{quantity}</Typography>
+                        <IconButton size="large" onClick={() => updateQuantity(item.id, quantity + 1)} color="primary">
+                          <AddIcon fontSize="large" />
                         </IconButton>
-                      </Box>
-                    ) : (
-                      <Button size="small" variant="contained" onClick={() => handleAddToCart(item)}>
-                        Add to Order
-                      </Button>
+                        </Box>
                     )}
                   </CardActions>
                 </Card>

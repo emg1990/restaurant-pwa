@@ -46,10 +46,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const menuItems = [
     { text: 'Home', path: '/', icon: <HomeIcon /> },
-  { text: "Today's Orders", path: '/orders', icon: <ReceiptLongIcon /> },
-  { text: 'Day Summary', path: '/day-summary', icon: <SummarizeIcon /> },
-  { text: 'Reports', path: '/reports', icon: <AssessmentIcon /> },
-  { text: 'Admin', path: '/admin', icon: <AdminPanelSettingsIcon /> },
+    { text: "Today's Orders", path: '/orders', icon: <ReceiptLongIcon /> },
+    { text: 'Day Summary', path: '/day-summary', icon: <SummarizeIcon /> },
+    { text: 'Reports', path: '/reports', icon: <AssessmentIcon /> },
+    { text: 'Admin', path: '/admin', icon: <AdminPanelSettingsIcon /> },
     { text: 'Order Summary', path: '/summary', icon: <ShoppingCartIcon /> },
   ];
 
@@ -75,14 +75,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, cursor: 'pointer' }} onClick={() => navigate('/')}>
-            Restaurant App
+            Pollos Zorro
           </Typography>
           <IconButton color="inherit" onClick={() => navigate('/')}>
-            <HomeIcon />
+            <HomeIcon sx={{ fontSize: 50 }} />
           </IconButton>
-          <IconButton color="inherit" onClick={() => navigate('/summary')}>
+          <IconButton color="inherit" onClick={() => navigate('/summary')} aria-label="order-summary">
             <Badge badgeContent={cartItemCount} color="secondary">
-              <ShoppingCartIcon />
+              <ShoppingCartIcon sx={{ fontSize: 50 }} />
             </Badge>
           </IconButton>
         </Toolbar>
