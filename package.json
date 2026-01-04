@@ -7,9 +7,14 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:apk": "npx @bubblewrap/cli init --manifest ./public/manifest.json --applicationId=com.emg1990.restaurantpwa --name \"Restaurant PWA\" --shortName Restaurant --launcherName \"Restaurant\" || true && npx @bubblewrap/cli build",
+    "deploy:gh-pages": "gh-pages -d public"
   },
   "dependencies": {
+    "@capacitor/android": "8.0.0",
+    "@capacitor/cli": "8.0.0",
+    "@capacitor/core": "8.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.6",
@@ -35,6 +40,8 @@
     "globals": "^16.5.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "gh-pages": "^5.0.0"
   }
+
 }

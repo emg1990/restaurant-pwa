@@ -1,0 +1,19 @@
+{
+  "packageId": "com.emg1990.restaurantpwa",
+  "host": "example.com",
+  "name": "Restaurant PWA",
+  "launcherName": "Restaurant",
+  "startUrl": "https://example.com/",
+  "display": "standalone",
+  "themeColor": "#1976d2",
+  "backgroundColor": "#ffffff",
+  "iconUrl": "https://image.similarpng.com/file/similarpng/original-picture/2022/01/Fried-chicken-restaurant-logo-template-on-transparent-background-PNG.png",
+  "versionCode": 1,
+  "versionName": "1.0",
+  "signing": {
+    "keyPath": "./release.keystore",
+    "keyAlias": "release",
+    "keyPassword": "",
+    "storePassword": ""
+  }
+}

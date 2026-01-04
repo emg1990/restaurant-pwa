@@ -1,0 +1,10 @@
+{
+  "name": "Restaurant PWA",
+  "short_name": "Restaurant",
+  "start_url": "https://example.com/",
+  "scope": "https://example.com/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
+  "icons": []
+}
