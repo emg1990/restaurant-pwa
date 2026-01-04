@@ -76,10 +76,9 @@ export const seedInitialData = async () => {
       await catStore.add(cat);
       // Add dummy items
       if (cat.name === 'Drinks') {
-        await itemStore.add({
-          id: uuidv4(), categoryId: cat.id, name: 'Cola', price: 2.5, isEnabled: true,
-          variants: [{ id: uuidv4(), name: '500ml', priceModifier: 0 }, { id: uuidv4(), name: '1L', priceModifier: 1.5 }]
-        });
+          await itemStore.add({
+            id: uuidv4(), categoryId: cat.id, name: 'Cola', price: 2.5, isEnabled: true,
+          });
         await itemStore.add({ id: uuidv4(), categoryId: cat.id, name: 'Water', price: 1.5, isEnabled: true });
       } else if (cat.name === 'Burgers') {
         await itemStore.add({ id: uuidv4(), categoryId: cat.id, name: 'Cheeseburger', price: 8.0, isEnabled: true });
@@ -136,7 +135,7 @@ export const finalizeDay = async (date?: string): Promise<void> => {
   const orders: Order[] = await db.getAllFromIndex('orders', 'by-date', IDBKeyRange.bound(start, end));
 
   // aggregate items and totals
-  const itemsMap = new Map<string, { itemId: string; name: string; variantName?: string; unitPrice: number; quantity: number; total: number }>();
+  const itemsMap = new Map<string, { itemId: string; name: string; unitPrice: number; quantity: number; total: number }>();
   let total = 0;
   const totalsByPayment: Record<string, number> = { CASH: 0, QR_CODE: 0, CARD: 0, OTHER: 0 };
 
@@ -145,13 +144,15 @@ export const finalizeDay = async (date?: string): Promise<void> => {
     const pm = (o.paymentMethod ?? 'OTHER') as string;
     totalsByPayment[pm] = (totalsByPayment[pm] || 0) + o.totalAmount;
     for (const it of o.items) {
-      const key = `${it.itemId}::${it.variantName ?? ''}`;
+      // aggregate by itemId and unitPrice (variants removed)
+      const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
+      const key = `${it.itemId}::${priceKey}`;
       const existing = itemsMap.get(key);
       if (existing) {
         existing.quantity += it.quantity;
         existing.total += it.unitPrice * it.quantity;
       } else {
-        itemsMap.set(key, { itemId: it.itemId, name: it.name, variantName: it.variantName, unitPrice: it.unitPrice, quantity: it.quantity, total: it.unitPrice * it.quantity });
+        itemsMap.set(key, { itemId: it.itemId, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity, total: it.unitPrice * it.quantity });
       }
     }
   }

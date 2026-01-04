@@ -43,31 +43,32 @@ const ReportsPage: React.FC = () => {
 
   const generateCSV = () => {
     // aggregate items across selected reports (reports array now flattened runs)
-    const itemsMap = new Map<string, { name: string; variantName?: string; quantity: number; total: number; unitPrice?: number }>();
+  const itemsMap = new Map<string, { name: string; quantity: number; total: number; unitPrice?: number }>();
     let grandTotal = 0;
     let orderCount = 0;
     for (const r of reports) {
       orderCount += r.orderCount || 0;
       grandTotal += r.total || 0;
       for (const it of r.items || []) {
-        // include unitPrice in key so edited prices are treated as distinct rows
-        const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
-        const key = `${it.itemId}::${it.variantName ?? ''}::${priceKey}`;
+  // include unitPrice in key so edited prices are treated as distinct rows
+  // remove variant from the key to aggregate across variants
+  const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
+  const key = `${it.itemId}::${priceKey}`;
         const existing = itemsMap.get(key);
         if (existing) {
           existing.quantity += it.quantity;
           existing.total += it.total;
         } else {
-          itemsMap.set(key, { name: it.name, variantName: it.variantName, quantity: it.quantity, total: it.total, unitPrice: it.unitPrice });
+          itemsMap.set(key, { name: it.name, quantity: it.quantity, total: it.total, unitPrice: it.unitPrice });
         }
       }
     }
 
     const rows = Array.from(itemsMap.values());
-    const header = ['Name', 'Variant', 'Quantity', 'Unit Price', 'Total'];
+    const header = ['Name', 'Quantity', 'Unit Price', 'Total'];
     const csv = [header.join(',')];
     for (const r of rows) {
-      csv.push([`"${r.name}"`, r.variantName ? `"${r.variantName}"` : '', r.quantity, r.unitPrice ?? '', (r.total ?? 0).toFixed(2)].join(','));
+      csv.push([`"${r.name}"`, r.quantity, r.unitPrice ?? '', (r.total ?? 0).toFixed(2)].join(','));
     }
     csv.push([] as any);
     csv.push([`"Orders","${orderCount}"`].join(','));
@@ -84,26 +85,27 @@ const ReportsPage: React.FC = () => {
 
   // aggregated items for table and filtering
   const aggregatedItems = React.useMemo(() => {
-    const itemsMap = new Map<string, { itemId?: string; name: string; variantName?: string; unitPrice?: number; quantity: number; total: number; categoryId?: string }>();
+  const itemsMap = new Map<string, { itemId?: string; name: string; unitPrice?: number; quantity: number; total: number; categoryId?: string }>();
     for (const r of reports) {
       for (const it of r.items || []) {
         // apply filters
-        if (selectedItem && it.itemId !== selectedItem) continue;
+  if (selectedItem && it.itemId !== selectedItem) continue;
         if (selectedCategory) {
           // find category for this item from catalog
           const catalog = allItems.find((a) => a.id === it.itemId);
           if (!catalog || catalog.categoryId !== selectedCategory) continue;
         }
-        // include unitPrice in the aggregation key so rows with edited prices appear separately
-        const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
-        const key = `${it.itemId}::${it.variantName ?? ''}::${priceKey}`;
+  // include unitPrice in the aggregation key so rows with edited prices appear separately
+  // remove variant from aggregation to combine variants into the same row
+  const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
+  const key = `${it.itemId}::${priceKey}`;
         const existing = itemsMap.get(key);
         if (existing) {
           existing.quantity += it.quantity;
           existing.total += it.total ?? (it.unitPrice * it.quantity);
         } else {
           const catalog = allItems.find((a) => a.id === it.itemId);
-          itemsMap.set(key, { itemId: it.itemId, name: it.name, variantName: it.variantName, unitPrice: it.unitPrice, quantity: it.quantity, total: it.total ?? (it.unitPrice * it.quantity), categoryId: catalog?.categoryId });
+          itemsMap.set(key, { itemId: it.itemId, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity, total: it.total ?? (it.unitPrice * it.quantity), categoryId: catalog?.categoryId });
         }
       }
     }
@@ -215,7 +217,6 @@ const ReportsPage: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell>Item</TableCell>
-              <TableCell>Variant</TableCell>
               <TableCell>Unit Price</TableCell>
               <TableCell>Quantity</TableCell>
               <TableCell>Total</TableCell>
@@ -225,7 +226,6 @@ const ReportsPage: React.FC = () => {
             {aggregatedItems.map((it, idx) => (
               <TableRow key={idx}>
                 <TableCell>{it.name}</TableCell>
-                <TableCell>{it.variantName || ''}</TableCell>
                 <TableCell>{it.unitPrice ? `$${it.unitPrice.toFixed(2)}` : ''}</TableCell>
                 <TableCell>{it.quantity}</TableCell>
                 <TableCell>${(it.total ?? 0).toFixed(2)}</TableCell>

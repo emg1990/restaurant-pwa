@@ -7,12 +7,6 @@ export interface Category {
   isEnabled: boolean;
 }
 
-export interface MenuItemVariant {
-  id: string;
-  name: string;
-  priceModifier: number;
-}
-
 export interface MenuItem {
   id: string;
   categoryId: string;
@@ -22,7 +16,6 @@ export interface MenuItem {
   thumbnail?: string;
   icon?: string;
   isEnabled: boolean;
-  variants?: MenuItemVariant[];
 }
 
 export type PaymentMethod = 'CASH' | 'QR_CODE' | 'CARD' | 'OTHER';
@@ -33,7 +26,6 @@ export interface OrderItem {
   name: string;
   quantity: number;
   unitPrice: number;
-  variantName?: string;
 }
 
 export interface Order {

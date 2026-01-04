@@ -59,8 +59,8 @@ const OrderPrintPage: React.FC = () => {
 
       <Box sx={{ mb: 2 }}>
         {order.items.map((it) => (
-          <Box key={`${it.itemId}-${it.variantName || ''}`} sx={{ display: 'flex', justifyContent: 'space-between', py: 1 }}>
-            <Typography>{it.name}{it.variantName ? ` (${it.variantName})` : ''} x{it.quantity}</Typography>
+          <Box key={it.itemId} sx={{ display: 'flex', justifyContent: 'space-between', py: 1 }}>
+            <Typography>{it.name} x{it.quantity}</Typography>
             <Typography>${(it.unitPrice * it.quantity).toFixed(2)}</Typography>
           </Box>
         ))}

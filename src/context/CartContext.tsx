@@ -3,10 +3,10 @@ import type { OrderItem, MenuItem } from '../models/types';
 
 interface CartContextType {
   items: OrderItem[];
-  addToCart: (item: MenuItem, quantity: number, variant?: string) => void;
+  addToCart: (item: MenuItem, quantity: number) => void;
   removeFromCart: (itemId: string) => void;
-  updateQuantity: (itemId: string, quantity: number, variant?: string) => void;
-  updatePrice: (itemId: string, price: number, variant?: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  updatePrice: (itemId: string, price: number) => void;
   clearCart: () => void;
   total: number;
 }
@@ -23,17 +23,17 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (item: MenuItem, quantity: number, variant?: string) => {
+  const addToCart = (item: MenuItem, quantity: number) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.itemId === item.id && i.variantName === variant);
+      const existing = prev.find((i) => i.itemId === item.id);
       if (existing) {
         return prev.map((i) =>
-          i.itemId === item.id && i.variantName === variant
+          i.itemId === item.id
             ? { ...i, quantity: i.quantity + quantity }
             : i
         );
       }
-      return [...prev, { itemId: item.id, name: item.name, quantity, unitPrice: item.price, variantName: variant }];
+      return [...prev, { itemId: item.id, name: item.name, quantity, unitPrice: item.price }];
     });
   };
 
@@ -41,21 +41,21 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setItems((prev) => prev.filter((i) => i.itemId !== itemId));
   };
 
-  const updateQuantity = (itemId: string, quantity: number, variant?: string) => {
+  const updateQuantity = (itemId: string, quantity: number) => {
     setItems((prev) => {
       const newQuantity = Math.max(0, quantity);
       return prev.map((i) =>
-        i.itemId === itemId && i.variantName === variant
+        i.itemId === itemId
           ? { ...i, quantity: newQuantity }
           : i
       );
     });
   };
 
-  const updatePrice = (itemId: string, price: number, variant?: string) => {
+  const updatePrice = (itemId: string, price: number) => {
     setItems((prev) =>
       prev.map((i) =>
-        i.itemId === itemId && i.variantName === variant
+        i.itemId === itemId
           ? { ...i, unitPrice: price }
           : i
       )

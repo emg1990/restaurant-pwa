@@ -49,7 +49,7 @@ const OrdersTodayPage: React.FC = () => {
         <List>
           {orders.map((o) => {
             const desc = o.items
-              .map((it) => `${it.quantity}x ${it.name}${it.variantName ? ` (${it.variantName})` : ''}`)
+              .map((it) => `${it.quantity}x ${it.name}`)
               .slice(0, 3)
               .join(', ');
 

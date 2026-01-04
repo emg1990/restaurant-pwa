@@ -74,7 +74,7 @@ const SummaryPage: React.FC = () => {
             <List>
               {items.map((item) => (
                 <ListItem
-                  key={`${item.itemId}-${item.variantName || ''}`}
+                  key={item.itemId}
                   sx={{ display: 'block', mb: 2, borderBottom: '1px solid #eee', pb: 2 }}
                 >
                   <Grid container spacing={2} alignItems="center">
@@ -82,11 +82,7 @@ const SummaryPage: React.FC = () => {
                       <Typography variant="subtitle1" fontWeight="bold">
                         {item.name}
                       </Typography>
-                      {item.variantName && (
-                        <Typography variant="body2" color="text.secondary">
-                          Variant: {item.variantName}
-                        </Typography>
-                      )}
+                      {/* Variants removed: variantName no longer used */}
                     </Grid>
                     <Grid size={{ xs: 3, sm: 2 }}>
                       {isEditMode ? (
@@ -94,7 +90,7 @@ const SummaryPage: React.FC = () => {
                           label="Qty"
                           type="number"
                           value={item.quantity}
-                          onChange={(e) => updateQuantity(item.itemId, parseInt(e.target.value) || 0, item.variantName)}
+                          onChange={(e) => updateQuantity(item.itemId, parseInt(e.target.value) || 0)}
                           size="small"
                           fullWidth
                           inputProps={{ min: 0 }}
@@ -109,7 +105,7 @@ const SummaryPage: React.FC = () => {
                           label="Price"
                           type="number"
                           value={item.unitPrice}
-                          onChange={(e) => updatePrice(item.itemId, parseFloat(e.target.value) || 0, item.variantName)}
+                          onChange={(e) => updatePrice(item.itemId, parseFloat(e.target.value) || 0)}
                           size="small"
                           fullWidth
                           inputProps={{ min: 0, step: 0.01 }}

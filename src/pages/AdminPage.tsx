@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, TextField, Button, MenuItem as MuiMenuItem, Select, FormControl, InputLabel, Tabs, Tab, List, ListItem, ListItemText, IconButton, Divider, Accordion, AccordionSummary, AccordionDetails, Grid, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Container, Typography, Box, TextField, Button, MenuItem as MuiMenuItem, Select, FormControl, InputLabel, Tabs, Tab, List, ListItem, ListItemText, IconButton, Accordion, AccordionSummary, AccordionDetails, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -55,19 +55,7 @@ const AdminPage: React.FC = () => {
   });
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
-  // Variant State
-  const [newVariant, setNewVariant] = useState({ name: '', priceModifier: 0 });
-
-  const handleAddVariant = () => {
-    if (!newVariant.name) return;
-    const variant = { id: uuidv4(), name: newVariant.name, priceModifier: Number(newVariant.priceModifier) };
-    setItemForm(prev => ({ ...prev, variants: [...(prev.variants || []), variant] }));
-    setNewVariant({ name: '', priceModifier: 0 });
-  };
-
-  const handleRemoveVariant = (id: string) => {
-    setItemForm(prev => ({ ...prev, variants: prev.variants?.filter(v => v.id !== id) }));
-  };
+  // Variants removed: simplified item form
 
   useEffect(() => {
     loadData();
@@ -108,7 +96,7 @@ const AdminPage: React.FC = () => {
         thumbnail: itemForm.thumbnail || '',
         icon: itemForm.icon || '',
         isEnabled: true,
-        variants: itemForm.variants || []
+        // variants removed
       };
       await addItem(newItem);
       alert('Item added!');
@@ -305,35 +293,7 @@ const AdminPage: React.FC = () => {
                 </Box>
               )}
 
-              <Typography variant="subtitle1" sx={{ mt: 2 }}>Variants (Optional)</Typography>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-                <TextField
-                  label="Variant Name (e.g. Large)"
-                  value={newVariant.name}
-                  onChange={(e) => setNewVariant({ ...newVariant, name: e.target.value })}
-                  size="small"
-                />
-                <TextField
-                  label="Price Modifier (+)"
-                  type="number"
-                  value={newVariant.priceModifier}
-                  onChange={(e) => setNewVariant({ ...newVariant, priceModifier: Number(e.target.value) })}
-                  size="small"
-                  sx={{ width: 100 }}
-                />
-                <Button variant="outlined" onClick={handleAddVariant}>Add</Button>
-              </Box>
-              <List dense>
-                {itemForm.variants?.map((v) => (
-                  <ListItem key={v.id} secondaryAction={
-                    <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveVariant(v.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  }>
-                    <ListItemText primary={v.name} secondary={`+${v.priceModifier}`} />
-                  </ListItem>
-                ))}
-              </List>
+              {/* Variants removed: UI simplified */}
 
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button type="submit" variant="contained" color="primary" fullWidth>
