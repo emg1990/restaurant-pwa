@@ -74,8 +74,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, cursor: 'pointer' }} onClick={() => navigate('/')}>
-            Pollos Zorro
+          <Typography variant="h4" component="div" sx={{ flexGrow: 1, cursor: 'pointer' }} onClick={() => navigate('/')}>
+            Zorro
           </Typography>
           <IconButton color="inherit" onClick={() => navigate('/')}>
             <HomeIcon sx={{ fontSize: 50 }} />

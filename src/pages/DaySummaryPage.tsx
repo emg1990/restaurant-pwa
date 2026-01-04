@@ -44,10 +44,19 @@ const DaySummaryPage: React.FC = () => {
       else if (pm === 'QR_CODE') acc.qr += o.totalAmount;
       else if (pm === 'CARD') acc.card += o.totalAmount;
       else acc.other += o.totalAmount;
+      // order type breakdown
+      const ot = o.orderType;
+      if (ot === 'EAT_IN') {
+        acc.eatIn.total += o.totalAmount;
+        acc.eatIn.count += 1;
+      } else if (ot === 'TO_GO') {
+        acc.toGo.total += o.totalAmount;
+        acc.toGo.count += 1;
+      }
       acc.count += 1;
       return acc;
     },
-    { total: 0, cash: 0, qr: 0, card: 0, other: 0, count: 0 }
+    { total: 0, cash: 0, qr: 0, card: 0, other: 0, count: 0, eatIn: { total: 0, count: 0 }, toGo: { total: 0, count: 0 } } as any
   );
 
   const handleFinalize = async () => {
@@ -78,7 +87,6 @@ const DaySummaryPage: React.FC = () => {
             InputLabelProps={{ shrink: true }}
             size="small"
           />
-          <Button variant="outlined" size="small" onClick={() => navigate('/')}>Home</Button>
           <Button variant="contained" size="small" sx={{ ml: 1 }} onClick={() => load(selectedDate)}>Refresh</Button>
         </Box>
       </Box>
@@ -113,6 +121,19 @@ const DaySummaryPage: React.FC = () => {
             </Box>
           </Box>
         </Paper>
+
+          <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
+            <Paper sx={{ p: 2, minWidth: 160 }}>
+              <Typography variant="subtitle2">Eat in</Typography>
+              <Typography variant="h6">${(totals.eatIn.total ?? 0).toFixed(2)}</Typography>
+              <Typography variant="caption">Orders: {totals.eatIn.count ?? 0}</Typography>
+            </Paper>
+            <Paper sx={{ p: 2, minWidth: 160 }}>
+              <Typography variant="subtitle2">To go</Typography>
+              <Typography variant="h6">${(totals.toGo.total ?? 0).toFixed(2)}</Typography>
+              <Typography variant="caption">Orders: {totals.toGo.count ?? 0}</Typography>
+            </Paper>
+          </Box>
       </Box>
 
       <Box sx={{ mt: 4 }}>
@@ -139,7 +160,7 @@ const DaySummaryPage: React.FC = () => {
                     <Typography variant="body2">${o.totalAmount.toFixed(2)} — {new Date(o.createdAt).toLocaleTimeString()}</Typography>
                   </Box>
                   <Box>
-                    <Button size="small" onClick={() => window.open(`/order/print/${o.id}`, '_blank')}>Open</Button>
+                    <Button size="small" onClick={() => navigate(`/order/print/${o.id}`)}>Open</Button>
                   </Box>
                 </Box>
               </Paper>

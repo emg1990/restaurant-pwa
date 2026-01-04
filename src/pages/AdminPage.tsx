@@ -14,7 +14,7 @@ import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
 import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 
 import type { Category, MenuItem } from '../models/types';
-import { getAllCategories, getAllItems, addItem, addCategory, deleteCategory, deleteItem, updateCategory, updateItem } from '../services/db';
+import { getAllCategories, getAllItems, addItem, addCategory, deleteCategory, deleteItem, updateCategory, updateItem, getSetting, setSetting } from '../services/db';
 import { v4 as uuidv4 } from 'uuid';
 
 const AVAILABLE_ICONS = [
@@ -33,6 +33,7 @@ const AdminPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [tableCount, setTableCount] = useState<number>(12);
   
   // Item State
   const [itemForm, setItemForm] = useState<Partial<MenuItem>>({
@@ -66,6 +67,8 @@ const AdminPage: React.FC = () => {
     const allItems = await getAllItems();
     setCategories(cats);
     setItems(allItems);
+    const tc = await getSetting<number>('tableCount');
+    setTableCount(typeof tc === 'number' && tc > 0 ? tc : 12);
     
     // Set default category for new item if not set
     if (cats.length > 0 && !itemForm.categoryId && !editingItemId) {
@@ -222,6 +225,7 @@ const AdminPage: React.FC = () => {
         <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ mb: 4 }}>
           <Tab label="Manage Items" />
           <Tab label="Manage Categories" />
+          <Tab label="Settings" />
         </Tabs>
         
         {activeTab === 0 && (
@@ -411,6 +415,32 @@ const AdminPage: React.FC = () => {
                 </ListItem>
               ))}
             </List>
+          </Box>
+        )}
+        {activeTab === 2 && (
+          <Box>
+            <Typography variant="h6" gutterBottom>Settings</Typography>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+              <TextField
+                label="Number of tables"
+                type="number"
+                value={tableCount}
+                onChange={(e) => setTableCount(Number(e.target.value))}
+                InputProps={{ inputProps: { min: 1 } }}
+              />
+              <Button
+                variant="contained"
+                onClick={async () => {
+                  const n = Number(tableCount) || 1;
+                  await setSetting('tableCount', n);
+                  // notify other parts of the app
+                  try { window.dispatchEvent(new CustomEvent('settings:updated', { detail: { tableCount: n } })); } catch (err) {}
+                  alert('Settings saved');
+                }}
+              >
+                Save
+              </Button>
+            </Box>
           </Box>
         )}
       </Box>

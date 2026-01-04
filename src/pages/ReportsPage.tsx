@@ -12,6 +12,7 @@ const ReportsPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<string>('');
+  const [selectedOrderType, setSelectedOrderType] = useState<string>('');
   const [metric, setMetric] = useState<'total' | 'quantity'>('total');
 
   const load = async () => {
@@ -47,19 +48,39 @@ const ReportsPage: React.FC = () => {
     let grandTotal = 0;
     let orderCount = 0;
     for (const r of reports) {
-      orderCount += r.orderCount || 0;
-      grandTotal += r.total || 0;
-      for (const it of r.items || []) {
-  // include unitPrice in key so edited prices are treated as distinct rows
-  // remove variant from the key to aggregate across variants
-  const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
-  const key = `${it.itemId}::${priceKey}`;
-        const existing = itemsMap.get(key);
-        if (existing) {
-          existing.quantity += it.quantity;
-          existing.total += it.total;
-        } else {
-          itemsMap.set(key, { name: it.name, quantity: it.quantity, total: it.total, unitPrice: it.unitPrice });
+      // if an orderType filter is set, aggregate only items from orders matching that type
+      if (selectedOrderType) {
+        for (const ord of r.orders || []) {
+          if (ord.orderType !== selectedOrderType) continue;
+          orderCount += 1;
+          grandTotal += ord.totalAmount || 0;
+          for (const it of ord.items || []) {
+            const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
+            const key = `${it.itemId}::${priceKey}`;
+            const existing = itemsMap.get(key);
+            const itTotal = (it.unitPrice ?? 0) * (it.quantity ?? 0);
+            if (existing) {
+              existing.quantity += it.quantity;
+              existing.total += itTotal;
+            } else {
+              itemsMap.set(key, { name: it.name, quantity: it.quantity, total: itTotal, unitPrice: it.unitPrice });
+            }
+          }
+        }
+      } else {
+        orderCount += r.orderCount || 0;
+        grandTotal += r.total || 0;
+        for (const it of r.items || []) {
+          // include unitPrice in key so edited prices are treated as distinct rows
+          const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
+          const key = `${it.itemId}::${priceKey}`;
+          const existing = itemsMap.get(key);
+          if (existing) {
+            existing.quantity += it.quantity;
+            existing.total += it.total;
+          } else {
+            itemsMap.set(key, { name: it.name, quantity: it.quantity, total: it.total, unitPrice: it.unitPrice });
+          }
         }
       }
     }
@@ -87,37 +108,71 @@ const ReportsPage: React.FC = () => {
   const aggregatedItems = React.useMemo(() => {
   const itemsMap = new Map<string, { itemId?: string; name: string; unitPrice?: number; quantity: number; total: number; categoryId?: string }>();
     for (const r of reports) {
-      for (const it of r.items || []) {
-        // apply filters
-  if (selectedItem && it.itemId !== selectedItem) continue;
-        if (selectedCategory) {
-          // find category for this item from catalog
-          const catalog = allItems.find((a) => a.id === it.itemId);
-          if (!catalog || catalog.categoryId !== selectedCategory) continue;
+      if (selectedOrderType) {
+        // aggregate from per-order items when orderType filter is active
+        for (const ord of r.orders || []) {
+          if (ord.orderType !== selectedOrderType) continue;
+          for (const it of ord.items || []) {
+            if (selectedItem && it.itemId !== selectedItem) continue;
+            if (selectedCategory) {
+              const catalog = allItems.find((a) => a.id === it.itemId);
+              if (!catalog || catalog.categoryId !== selectedCategory) continue;
+            }
+            const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
+            const key = `${it.itemId}::${priceKey}`;
+            const existing = itemsMap.get(key);
+            const itTotal = (it.unitPrice ?? 0) * (it.quantity ?? 0);
+            if (existing) {
+              existing.quantity += it.quantity;
+              existing.total += itTotal;
+            } else {
+              const catalog = allItems.find((a) => a.id === it.itemId);
+              itemsMap.set(key, { itemId: it.itemId, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity, total: itTotal, categoryId: catalog?.categoryId });
+            }
+          }
         }
-  // include unitPrice in the aggregation key so rows with edited prices appear separately
-  // remove variant from aggregation to combine variants into the same row
-  const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
-  const key = `${it.itemId}::${priceKey}`;
-        const existing = itemsMap.get(key);
-        if (existing) {
-          existing.quantity += it.quantity;
-          existing.total += it.total ?? (it.unitPrice * it.quantity);
-        } else {
-          const catalog = allItems.find((a) => a.id === it.itemId);
-          itemsMap.set(key, { itemId: it.itemId, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity, total: it.total ?? (it.unitPrice * it.quantity), categoryId: catalog?.categoryId });
+      } else {
+        for (const it of r.items || []) {
+          if (selectedItem && it.itemId !== selectedItem) continue;
+          if (selectedCategory) {
+            const catalog = allItems.find((a) => a.id === it.itemId);
+            if (!catalog || catalog.categoryId !== selectedCategory) continue;
+          }
+          const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
+          const key = `${it.itemId}::${priceKey}`;
+          const existing = itemsMap.get(key);
+          if (existing) {
+            existing.quantity += it.quantity;
+            existing.total += it.total ?? (it.unitPrice * it.quantity);
+          } else {
+            const catalog = allItems.find((a) => a.id === it.itemId);
+            itemsMap.set(key, { itemId: it.itemId, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity, total: it.total ?? (it.unitPrice * it.quantity), categoryId: catalog?.categoryId });
+          }
         }
       }
     }
     return Array.from(itemsMap.values()).sort((a, b) => b.total - a.total);
-  }, [reports, selectedItem, selectedCategory, allItems]);
+  }, [reports, selectedItem, selectedCategory, allItems, selectedOrderType]);
 
   // chart data: totals per date, respecting filters and metric
   const chartData = React.useMemo(() => {
     const map = new Map<string, number>();
     for (const r of reports) {
       let value = 0;
-      if (selectedItem || selectedCategory) {
+      if (selectedOrderType) {
+        // sum only items inside orders of the selected type
+        for (const ord of r.orders || []) {
+          if (ord.orderType !== selectedOrderType) continue;
+          for (const it of ord.items || []) {
+            if (selectedItem && it.itemId !== selectedItem) continue;
+            if (selectedCategory) {
+              const catalog = allItems.find((a) => a.id === it.itemId);
+              if (!catalog || catalog.categoryId !== selectedCategory) continue;
+            }
+            value += metric === 'total' ? ((it.unitPrice ?? 0) * (it.quantity ?? 0)) : (it.quantity ?? 0);
+          }
+        }
+      } else if (selectedItem || selectedCategory) {
         for (const it of r.items || []) {
           if (selectedItem && it.itemId !== selectedItem) continue;
           if (selectedCategory) {
@@ -177,6 +232,14 @@ const ReportsPage: React.FC = () => {
 
       {/* Filters */}
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel id="order-type-label">Order Type</InputLabel>
+          <Select labelId="order-type-label" value={selectedOrderType} label="Order Type" onChange={(e) => setSelectedOrderType(e.target.value)}>
+            <MuiMenuItem value="">All</MuiMenuItem>
+            <MuiMenuItem value="EAT_IN">Eat in</MuiMenuItem>
+            <MuiMenuItem value="TO_GO">To go</MuiMenuItem>
+          </Select>
+        </FormControl>
         <FormControl size="small" sx={{ minWidth: 160 }}>
           <InputLabel id="metric-label">Metric</InputLabel>
           <Select labelId="metric-label" value={metric} label="Metric" onChange={(e) => setMetric(e.target.value as 'total' | 'quantity')}>
@@ -244,6 +307,8 @@ const ReportsPage: React.FC = () => {
               <TableCell>Total</TableCell>
               <TableCell>Cash</TableCell>
               <TableCell>QR</TableCell>
+              <TableCell>Eat in</TableCell>
+              <TableCell>To go</TableCell>
               <TableCell>Items</TableCell>
             </TableRow>
           </TableHead>
@@ -255,6 +320,8 @@ const ReportsPage: React.FC = () => {
                 <TableCell>${(r.total ?? 0).toFixed(2)}</TableCell>
                 <TableCell>${(r.totalsByPayment?.CASH ?? 0).toFixed(2)}</TableCell>
                 <TableCell>${(r.totalsByPayment?.QR_CODE ?? 0).toFixed(2)}</TableCell>
+                <TableCell>${(r.totalsByOrderType?.EAT_IN ?? 0).toFixed(2)}</TableCell>
+                <TableCell>${(r.totalsByOrderType?.TO_GO ?? 0).toFixed(2)}</TableCell>
                 <TableCell>{(r.items || []).length}</TableCell>
               </TableRow>
             ))}

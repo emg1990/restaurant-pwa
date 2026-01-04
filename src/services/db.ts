@@ -138,11 +138,15 @@ export const finalizeDay = async (date?: string): Promise<void> => {
   const itemsMap = new Map<string, { itemId: string; name: string; unitPrice: number; quantity: number; total: number }>();
   let total = 0;
   const totalsByPayment: Record<string, number> = { CASH: 0, QR_CODE: 0, CARD: 0, OTHER: 0 };
+  // also track totals by order type (EAT_IN / TO_GO)
+  const totalsByOrderType: Record<string, number> = { EAT_IN: 0, TO_GO: 0 };
 
   for (const o of orders) {
-    total += o.totalAmount;
-    const pm = (o.paymentMethod ?? 'OTHER') as string;
-    totalsByPayment[pm] = (totalsByPayment[pm] || 0) + o.totalAmount;
+  total += o.totalAmount;
+  const pm = (o.paymentMethod ?? 'OTHER') as string;
+  totalsByPayment[pm] = (totalsByPayment[pm] || 0) + o.totalAmount;
+  const ot = (o.orderType ?? '') as string;
+  if (ot) totalsByOrderType[ot] = (totalsByOrderType[ot] || 0) + o.totalAmount;
     for (const it of o.items) {
       // aggregate by itemId and unitPrice (variants removed)
       const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
@@ -162,8 +166,10 @@ export const finalizeDay = async (date?: string): Promise<void> => {
     orderCount: orders.length,
     total,
     totalsByPayment,
+    totalsByOrderType,
     items: Array.from(itemsMap.values()),
-    orders: orders.map((o) => ({ id: o.id, shortId: o.shortId, orderNumber: o.orderNumber, totalAmount: o.totalAmount })),
+    // preserve per-order minimal data including orderType and the items for filtering later
+    orders: orders.map((o) => ({ id: o.id, shortId: o.shortId, orderNumber: o.orderNumber, totalAmount: o.totalAmount, orderType: o.orderType, items: o.items })),
   } as any;
 
   // retrieve existing report for the date and append a run (so multiple finalizations per day are preserved)

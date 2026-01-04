@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -19,9 +19,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import { useCart } from '../context/CartContext';
-import { addOrder, getNextOrderNumber } from '../services/db';
+import { addOrder, getNextOrderNumber, getSetting } from '../services/db';
 import { v4 as uuidv4 } from 'uuid';
-import type { Order, PaymentMethod } from '../models/types';
+import type { Order, PaymentMethod, OrderType } from '../models/types';
 import { useNavigate } from 'react-router-dom';
 
 const SummaryPage: React.FC = () => {
@@ -29,6 +29,23 @@ const SummaryPage: React.FC = () => {
   const navigate = useNavigate();
   const [isEditMode, setIsEditMode] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
+  const [orderType, setOrderType] = useState<OrderType>('EAT_IN');
+  const [selectedTable, setSelectedTable] = useState<string>('');
+  const [tables, setTables] = useState<string[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const cnt = await getSetting<number>('tableCount');
+      const n = typeof cnt === 'number' && cnt > 0 ? cnt : 12;
+      setTables(Array.from({ length: n }, (_, i) => `T${i + 1}`));
+    })();
+    const onSettings = (e: any) => {
+      const n = e?.detail?.tableCount;
+      if (typeof n === 'number' && n > 0) setTables(Array.from({ length: n }, (_, i) => `T${i + 1}`));
+    };
+    window.addEventListener('settings:updated', onSettings as EventListener);
+    return () => window.removeEventListener('settings:updated', onSettings as EventListener);
+  }, []);
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) return;
@@ -44,6 +61,8 @@ const SummaryPage: React.FC = () => {
       totalAmount: total,
       status: 'PENDING',
       paymentMethod: paymentMethod === 'QR_CODE' ? 'QR_CODE' : 'CASH',
+      orderType: orderType,
+      table: orderType === 'EAT_IN' ? selectedTable : undefined,
     };
 
     await addOrder(order);
@@ -144,6 +163,39 @@ const SummaryPage: React.FC = () => {
                   <FormControlLabel value="QR_CODE" control={<Radio />} label="QR" />
                 </RadioGroup>
               </FormControl>
+            </Box>
+            <Box sx={{ mb: 2 }}>
+              <FormControl component="fieldset">
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>Order type</Typography>
+                <RadioGroup
+                  row
+                  value={orderType}
+                  onChange={(e) => {
+                    const val = e.target.value as OrderType;
+                    setOrderType(val);
+                    if (val !== 'EAT_IN') setSelectedTable('');
+                  }}
+                >
+                  <FormControlLabel value="EAT_IN" control={<Radio />} label="Eat in" />
+                  <FormControlLabel value="TO_GO" control={<Radio />} label="To go" />
+                </RadioGroup>
+              </FormControl>
+
+              {orderType === 'EAT_IN' && (
+                <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  {tables.map((t) => (
+                    <Button
+                      key={t}
+                      size="large"
+                      variant={selectedTable === t ? 'contained' : 'outlined'}
+                      onClick={() => setSelectedTable(t)}
+                      sx={{ fontSize: '2rem', padding: '12px 24px' }}
+                    >
+                      {t}
+                    </Button>
+                  ))}
+                </Box>
+              )}
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>

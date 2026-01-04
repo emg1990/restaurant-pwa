@@ -20,6 +20,7 @@ export interface MenuItem {
 
 export type PaymentMethod = 'CASH' | 'QR_CODE' | 'CARD' | 'OTHER';
 export type OrderStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED';
+export type OrderType = 'EAT_IN' | 'TO_GO';
 
 export interface OrderItem {
   itemId: string;
@@ -37,6 +38,8 @@ export interface Order {
   totalAmount: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
+  orderType?: OrderType;
+  table?: string;
   notes?: string;
 }
 
