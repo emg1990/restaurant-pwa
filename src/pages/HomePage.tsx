@@ -88,10 +88,6 @@ const HomePage: React.FC = () => {
   return (
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Menu
-        </Typography>
-
         <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', mb: 4, py: 1 }}>
           {categories.map((cat) => {
             let iconElement = <RestaurantIcon sx={{ fontSize: 40 }} />;
@@ -120,7 +116,7 @@ const HomePage: React.FC = () => {
           {filteredItems.map((item) => {
             const quantity = getQuantity(item.id);
             return (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
+              <Grid size={{ xs: 6, sm: 6, md: 4 }} key={item.id}>
                 <Card>
                     <div onClick={() => handleAddToCart(item)} style={{ cursor: 'pointer' }}>
                     {renderItemImage(item)}

@@ -4,9 +4,9 @@ export const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#6200EE', // Material Deep Purple
-      light: '#9e47ff',
-      dark: '#0400ba',
+      main: '#FBC02D', // Yellowish
+      light: '#FFF263',
+      dark: '#C49000',
     },
     secondary: {
       main: '#03DAC6', // Material Teal
@@ -23,6 +23,7 @@ export const theme = createTheme({
     },
   },
   typography: {
+    fontSize: 24,
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
       fontWeight: 700,

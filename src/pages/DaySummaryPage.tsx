@@ -11,8 +11,13 @@ import {
   DialogActions,
   Paper,
   TextField,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
 } from '@mui/material';
-import { getOrdersByDate, finalizeDay } from '../services/db';
+import { getOrdersByDate, finalizeDay, getAllItems, getAllCategories } from '../services/db';
 import type { Order, PaymentMethod } from '../models/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,6 +28,9 @@ const DaySummaryPage: React.FC = () => {
   const today = new Date().toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const navigate = useNavigate();
+
+  const [catalogItems, setCatalogItems] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
   const load = async (date?: string) => {
     setLoading(true);
@@ -35,6 +43,15 @@ const DaySummaryPage: React.FC = () => {
   };
 
   useEffect(() => { load(selectedDate); }, [selectedDate]);
+
+  useEffect(() => {
+    (async () => {
+      const items = await getAllItems();
+      const cats = await getAllCategories();
+      setCatalogItems(items || []);
+      setCategories((cats || []).sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)));
+    })();
+  }, []);
 
   const totals = orders.reduce(
     (acc, o) => {
@@ -58,6 +75,37 @@ const DaySummaryPage: React.FC = () => {
     },
     { total: 0, cash: 0, qr: 0, card: 0, other: 0, count: 0, eatIn: { total: 0, count: 0 }, toGo: { total: 0, count: 0 } } as any
   );
+
+  // aggregate items sold today (by itemId and unitPrice so edited prices are separated) and attach categoryId
+  const aggregatedItems = React.useMemo(() => {
+    const map = new Map<string, { itemId: string; name: string; unitPrice: number; quantity: number; total: number; categoryId?: string }>();
+    for (const o of orders) {
+      for (const it of o.items) {
+        const priceKey = it.unitPrice != null ? Number(it.unitPrice).toFixed(2) : '';
+        const key = `${it.itemId}::${priceKey}`;
+        const existing = map.get(key);
+        const lineTotal = (it.unitPrice ?? 0) * (it.quantity ?? 0);
+        if (existing) {
+          existing.quantity += it.quantity;
+          existing.total += lineTotal;
+        } else {
+          const catalog = catalogItems.find((c) => c.id === it.itemId);
+          map.set(key, { itemId: it.itemId, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity, total: lineTotal, categoryId: catalog?.categoryId });
+        }
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+  }, [orders, catalogItems]);
+
+  const itemsByCategory = React.useMemo(() => {
+    const grouped = new Map<string, typeof aggregatedItems>();
+    for (const it of aggregatedItems) {
+      const cat = it.categoryId ?? 'uncategorized';
+      if (!grouped.has(cat)) grouped.set(cat, [] as any);
+      grouped.get(cat)!.push(it);
+    }
+    return grouped;
+  }, [aggregatedItems]);
 
   const handleFinalize = async () => {
     await finalizeDay(selectedDate);
@@ -87,7 +135,6 @@ const DaySummaryPage: React.FC = () => {
             InputLabelProps={{ shrink: true }}
             size="small"
           />
-          <Button variant="contained" size="small" sx={{ ml: 1 }} onClick={() => load(selectedDate)}>Refresh</Button>
         </Box>
       </Box>
 
@@ -122,7 +169,7 @@ const DaySummaryPage: React.FC = () => {
           </Box>
         </Paper>
 
-          <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
             <Paper sx={{ p: 2, minWidth: 160 }}>
               <Typography variant="subtitle2">Eat in</Typography>
               <Typography variant="h6">${(totals.eatIn.total ?? 0).toFixed(2)}</Typography>
@@ -134,6 +181,73 @@ const DaySummaryPage: React.FC = () => {
               <Typography variant="caption">Orders: {totals.toGo.count ?? 0}</Typography>
             </Paper>
           </Box>
+            {/* Items sold summary grouped by category */}
+            <Box sx={{ width: '100%', mt: 2 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>Items sold today</Typography>
+              {aggregatedItems.length === 0 ? (
+                <Typography>No items sold.</Typography>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {categories.map((cat) => {
+                    const catId = cat.id;
+                    const bucket = itemsByCategory.get(catId);
+                    if (!bucket || bucket.length === 0) return null;
+                    return (
+                      <Paper key={catId} sx={{ p: 2 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>{cat.name}</Typography>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Item</TableCell>
+                              <TableCell>Unit Price</TableCell>
+                              <TableCell>Quantity</TableCell>
+                              <TableCell>Total</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {bucket.map((it) => (
+                              <TableRow key={`${it.itemId}-${it.unitPrice}`}>
+                                <TableCell>{it.name}</TableCell>
+                                <TableCell>${(it.unitPrice ?? 0).toFixed(2)}</TableCell>
+                                <TableCell>{it.quantity}</TableCell>
+                                <TableCell>${it.total.toFixed(2)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </Paper>
+                    );
+                  })}
+
+                  {/* uncategorized */}
+                  {itemsByCategory.get('uncategorized') && (
+                    <Paper sx={{ p: 2 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>Uncategorized</Typography>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Item</TableCell>
+                            <TableCell>Unit Price</TableCell>
+                            <TableCell>Quantity</TableCell>
+                            <TableCell>Total</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {itemsByCategory.get('uncategorized')!.map((it) => (
+                            <TableRow key={`${it.itemId}-${it.unitPrice}`}>
+                              <TableCell>{it.name}</TableCell>
+                              <TableCell>${(it.unitPrice ?? 0).toFixed(2)}</TableCell>
+                              <TableCell>{it.quantity}</TableCell>
+                              <TableCell>${it.total.toFixed(2)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </Paper>
+                  )}
+                </Box>
+              )}
+            </Box>
       </Box>
 
       <Box sx={{ mt: 4 }}>
