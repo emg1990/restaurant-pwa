@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Box, Button, TextField, Paper, Table, TableHead, TableRow, TableCell, TableBody, FormControl, InputLabel, Select, MenuItem as MuiMenuItem } from '@mui/material';
+import { Container, Typography, Box, Button, TextField, Paper, Table, TableHead, TableRow, TableCell, TableBody, FormControl, InputLabel, Select, MenuItem as MuiMenuItem, TableContainer } from '@mui/material';
 import { getReportsInRange, getAllItems, getAllCategories } from '../services/db';
-import { localYYYYMMDD } from '../lib/date';
+import { monthRange } from '../lib/date';
 import type { MenuItem as MenuItemType, Category } from '../models/types';
 
 const ReportsPage: React.FC = () => {
-  const today = localYYYYMMDD();
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(today);
+  const { start: defaultStart, end: defaultEnd } = monthRange();
+  const [startDate, setStartDate] = useState(defaultStart);
+  const [endDate, setEndDate] = useState(defaultEnd);
   const [reports, setReports] = useState<any[]>([]);
   const [allItems, setAllItems] = useState<MenuItemType[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -15,6 +15,7 @@ const ReportsPage: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<string>('');
   const [selectedOrderType, setSelectedOrderType] = useState<string>('');
   const [metric, setMetric] = useState<'total' | 'quantity'>('total');
+  const [groupBy, setGroupBy] = useState<'date' | 'hour'>('date');
 
   const load = async () => {
     if (!startDate || !endDate) return;
@@ -30,6 +31,8 @@ const ReportsPage: React.FC = () => {
       }
     }
     setReports(flattened);
+
+    // hourly/live-order loading removed while chart is disabled
   };
 
   useEffect(() => { load(); }, []);
@@ -156,68 +159,10 @@ const ReportsPage: React.FC = () => {
   }, [reports, selectedItem, selectedCategory, allItems, selectedOrderType]);
 
   // chart data: totals per date, respecting filters and metric
-  const chartData = React.useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of reports) {
-      let value = 0;
-      if (selectedOrderType) {
-        // sum only items inside orders of the selected type
-        for (const ord of r.orders || []) {
-          if (ord.orderType !== selectedOrderType) continue;
-          for (const it of ord.items || []) {
-            if (selectedItem && it.itemId !== selectedItem) continue;
-            if (selectedCategory) {
-              const catalog = allItems.find((a) => a.id === it.itemId);
-              if (!catalog || catalog.categoryId !== selectedCategory) continue;
-            }
-            value += metric === 'total' ? ((it.unitPrice ?? 0) * (it.quantity ?? 0)) : (it.quantity ?? 0);
-          }
-        }
-      } else if (selectedItem || selectedCategory) {
-        for (const it of r.items || []) {
-          if (selectedItem && it.itemId !== selectedItem) continue;
-          if (selectedCategory) {
-            const catalog = allItems.find((a) => a.id === it.itemId);
-            if (!catalog || catalog.categoryId !== selectedCategory) continue;
-          }
-          value += metric === 'total' ? (it.total ?? (it.unitPrice * it.quantity)) : (it.quantity ?? 0);
-        }
-      } else {
-        value = metric === 'total' ? (r.total ?? 0) : (r.items || []).reduce((s: number, it: any) => s + (it.quantity ?? 0), 0);
-      }
-      map.set(r.date, (map.get(r.date) || 0) + value);
-    }
-    const arr = Array.from(map.entries()).map(([date, value]) => ({ date, value }));
-    arr.sort((a, b) => a.date.localeCompare(b.date));
-    return arr;
-  }, [reports, selectedItem, selectedCategory, metric, allItems]);
+  // Chart aggregation removed temporarily; chart UI is disabled while we fix aggregation bugs.
+  // Chart data is currently unused because the chart UI is disabled while we fix aggregation bugs.
 
-  const Chart: React.FC = () => {
-    const width = 700;
-    const height = 240;
-    const padding = 40;
-    const data = chartData;
-    const max = Math.max(...data.map(d => d.value), 1);
-    const barWidth = data.length ? (width - padding * 2) / data.length : 0;
-    return (
-      <svg width={width} height={height} style={{ width: '100%', maxWidth: width }}>
-        <g transform={`translate(${padding},${padding})`}>
-          {data.map((d, i) => {
-            const h = ( (height - padding * 2) * d.value) / max;
-            const x = i * barWidth + 4;
-            const y = (height - padding * 2) - h;
-            return (
-              <g key={d.date}>
-                <rect x={x} y={y} width={Math.max(barWidth - 8, 6)} height={h} fill="#1976d2" />
-                <text x={x + (barWidth - 8) / 2} y={(height - padding * 2) + 14} fontSize={10} textAnchor="middle">{d.date}</text>
-                <text x={x + 4} y={y - 4} fontSize={10}>{d.value.toFixed(2)}</text>
-              </g>
-            );
-          })}
-        </g>
-      </svg>
-    );
-  };
+  // Chart component intentionally removed while debugging aggregation bugs.
 
   return (
     <Container maxWidth="lg" sx={{ my: 4 }}>
@@ -249,6 +194,14 @@ const ReportsPage: React.FC = () => {
           </Select>
         </FormControl>
 
+        <FormControl size="small" sx={{ minWidth: 160 }}>
+          <InputLabel id="groupby-label">Group by</InputLabel>
+          <Select labelId="groupby-label" value={groupBy} label="Group by" onChange={(e) => setGroupBy(e.target.value as 'date' | 'hour')}>
+            <MuiMenuItem value={'date'}>By day</MuiMenuItem>
+            <MuiMenuItem value={'hour'}>By hour (single day)</MuiMenuItem>
+          </Select>
+        </FormControl>
+
         <FormControl size="small" sx={{ minWidth: 200 }}>
           <InputLabel id="category-label">Category</InputLabel>
           <Select labelId="category-label" value={selectedCategory} label="Category" onChange={(e) => { setSelectedCategory(e.target.value); setSelectedItem(''); }}>
@@ -272,12 +225,13 @@ const ReportsPage: React.FC = () => {
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="subtitle1" sx={{ mb: 1 }}>Totals by day ({metric})</Typography>
-        <Chart />
+        <Typography variant="body2" color="text.secondary">Chart temporarily disabled — working on a fix.</Typography>
       </Paper>
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="subtitle1" sx={{ mb: 1 }}>Items sold (filtered)</Typography>
-        <Table>
+        <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+          <Table>
           <TableHead>
             <TableRow>
               <TableCell>Item</TableCell>
@@ -296,11 +250,13 @@ const ReportsPage: React.FC = () => {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+          </Table>
+        </TableContainer>
       </Paper>
 
       <Paper>
-        <Table>
+        <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+          <Table>
           <TableHead>
             <TableRow>
               <TableCell>Date</TableCell>
@@ -314,20 +270,29 @@ const ReportsPage: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {reports.map((r, idx) => (
-              <TableRow key={`${r.date}-${idx}`}>
-                <TableCell>{r.date}</TableCell>
-                <TableCell>{r.orderCount}</TableCell>
-                <TableCell>${(r.total ?? 0).toFixed(2)}</TableCell>
-                <TableCell>${(r.totalsByPayment?.CASH ?? 0).toFixed(2)}</TableCell>
-                <TableCell>${(r.totalsByPayment?.QR_CODE ?? 0).toFixed(2)}</TableCell>
-                <TableCell>${(r.totalsByOrderType?.EAT_IN ?? 0).toFixed(2)}</TableCell>
-                <TableCell>${(r.totalsByOrderType?.TO_GO ?? 0).toFixed(2)}</TableCell>
-                <TableCell>{(r.items || []).length}</TableCell>
-              </TableRow>
-            ))}
+            {reports.map((r, idx) => {
+              // compute total item quantity for report row: prefer r.items quantities, otherwise sum orders
+              const totalItems = ((): number => {
+                if (Array.isArray(r.items) && r.items.length > 0) return r.items.reduce((s: number, it: any) => s + (it.quantity ?? 0), 0);
+                if (Array.isArray(r.orders) && r.orders.length > 0) return r.orders.reduce((s: number, o: any) => s + ((o.items || []).reduce((ss: number, it: any) => ss + (it.quantity ?? 0), 0)), 0);
+                return 0;
+              })();
+              return (
+                <TableRow key={`${r.date}-${idx}`}>
+                  <TableCell>{r.date}</TableCell>
+                  <TableCell>{r.orderCount}</TableCell>
+                  <TableCell>${(r.total ?? 0).toFixed(2)}</TableCell>
+                  <TableCell>${(r.totalsByPayment?.CASH ?? 0).toFixed(2)}</TableCell>
+                  <TableCell>${(r.totalsByPayment?.QR_CODE ?? 0).toFixed(2)}</TableCell>
+                  <TableCell>${(r.totalsByOrderType?.EAT_IN ?? 0).toFixed(2)}</TableCell>
+                  <TableCell>${(r.totalsByOrderType?.TO_GO ?? 0).toFixed(2)}</TableCell>
+                  <TableCell>{totalItems}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
-        </Table>
+          </Table>
+        </TableContainer>
       </Paper>
 
     </Container>

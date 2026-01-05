@@ -118,7 +118,7 @@ const HomePage: React.FC = () => {
             return (
               <Grid size={{ xs: 6, sm: 6, md: 4 }} key={item.id}>
                 <Card>
-                    <div onClick={() => handleAddToCart(item)} style={{ cursor: 'pointer' }}>
+                  <div onClick={() => handleAddToCart(item)} style={{ cursor: 'pointer' }}>
                     {renderItemImage(item)}
                     <CardContent>
                       <Typography variant="h6" component="div">
@@ -134,15 +134,15 @@ const HomePage: React.FC = () => {
                   </div>
                   <CardActions>
                     {quantity > 0 && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, width: '100%' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, width: '100%' }}>
                         <IconButton size="large" onClick={() => updateQuantity(item.id, quantity - 1)} color="primary">
                           <RemoveIcon fontSize="large" />
                         </IconButton>
-                        <Typography sx={{ minWidth: '40px', textAlign: 'center', fontWeight: 'bold', fontSize: '2rem' }}>{quantity}</Typography>
+                        <Typography sx={{ minWidth: '35px', textAlign: 'center', fontWeight: 'bold', fontSize: '1.5rem' }}>{quantity}</Typography>
                         <IconButton size="large" onClick={() => updateQuantity(item.id, quantity + 1)} color="primary">
                           <AddIcon fontSize="large" />
                         </IconButton>
-                        </Box>
+                      </Box>
                     )}
                   </CardActions>
                 </Card>

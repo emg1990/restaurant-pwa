@@ -11,7 +11,7 @@ import Layout from './components/layout/Layout';
 
 function App() {
   return (
-    <Router>
+    <Router basename="/restaurant-pwa">
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />

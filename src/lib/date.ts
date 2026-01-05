@@ -60,6 +60,15 @@ export const formatDate = (input?: number | Date | string, options?: Intl.DateTi
   return toDate(input).toLocaleDateString(undefined, options);
 };
 
+export const monthRange = (input?: Date | string): { start: string; end: string } => {
+  const d = typeof input === 'string' ? new Date(input) : (input ? toDate(input) : new Date());
+  const year = d.getFullYear();
+  const monthIndex = d.getMonth();
+  const first = new Date(year, monthIndex, 1);
+  const last = new Date(year, monthIndex + 1, 0);
+  return { start: localYYYYMMDD(first), end: localYYYYMMDD(last) };
+};
+
 export default {
   localYYYYMMDD,
   startOfDayMs,
