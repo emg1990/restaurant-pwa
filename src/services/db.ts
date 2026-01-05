@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Category, MenuItem, Order } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
+import { localYYYYMMDD, startOfDayMs, endOfDayMs } from '../lib/date';
 
 interface RestaurantDB extends DBSchema {
   categories: {
@@ -127,9 +128,9 @@ export const deleteOrder = async (id: string): Promise<void> => {
 
 export const finalizeDay = async (date?: string): Promise<void> => {
   const db = await initDB();
-  const day = date ?? new Date().toISOString().slice(0, 10);
-  const start = new Date(`${day}T00:00:00`).getTime();
-  const end = new Date(`${day}T23:59:59.999`).getTime();
+  const day = date ?? localYYYYMMDD();
+  const start = startOfDayMs(day);
+  const end = endOfDayMs(day);
 
   // get today's orders
   const orders: Order[] = await db.getAllFromIndex('orders', 'by-date', IDBKeyRange.bound(start, end));
@@ -212,8 +213,8 @@ export const getReport = async (date: string): Promise<any | undefined> => {
 export const getReportsInRange = async (startDate: string, endDate: string): Promise<any[]> => {
   const db = await initDB();
   const all = await db.getAll('reports');
-  const start = new Date(startDate).toISOString().slice(0, 10);
-  const end = new Date(endDate).toISOString().slice(0, 10);
+  const start = localYYYYMMDD(startDate);
+  const end = localYYYYMMDD(endDate);
   return all.filter((r) => r.date >= start && r.date <= end).sort((a, b) => a.date.localeCompare(b.date));
 };
 
@@ -227,9 +228,9 @@ export const updateOrder = async (order: Order): Promise<void> => {
  */
 export const getOrdersByDate = async (date?: string): Promise<Order[]> => {
   const db = await initDB();
-  const day = date ?? new Date().toISOString().slice(0, 10);
-  const start = new Date(`${day}T00:00:00`).getTime();
-  const end = new Date(`${day}T23:59:59.999`).getTime();
+  const day = date ?? localYYYYMMDD();
+  const start = startOfDayMs(day);
+  const end = endOfDayMs(day);
   // Use index 'by-date' on createdAt to query range
   return db.getAllFromIndex('orders', 'by-date', IDBKeyRange.bound(start, end));
 };
@@ -252,7 +253,7 @@ export const setSetting = async (key: string, value: any): Promise<void> => {
  */
 export const getNextOrderNumber = async (): Promise<number> => {
   const db = await initDB();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localYYYYMMDD();
   const entry = (await db.get('settings', 'orderCounter')) as { date: string; counter: number } | undefined;
 
   if (!entry || entry.date !== today) {
@@ -272,7 +273,7 @@ export const getNextOrderNumber = async (): Promise<number> => {
  */
 export const resetOrderNumber = async (forDate?: string): Promise<void> => {
   const db = await initDB();
-  const date = forDate ?? new Date().toISOString().slice(0, 10);
+  const date = forDate ?? localYYYYMMDD();
   await db.put('settings', { date, counter: 0 }, 'orderCounter');
 };
 

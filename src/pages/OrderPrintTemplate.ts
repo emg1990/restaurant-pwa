@@ -1,4 +1,5 @@
 import type { Order } from '../models/types';
+import { formatDateTime } from '../lib/date';
 
 export const generateOrderPrintHTML = (order: Order): string => {
   return `
@@ -28,7 +29,7 @@ export const generateOrderPrintHTML = (order: Order): string => {
         <div class="order-info">
           <div>Type: ${order.orderType === 'TO_GO' ? 'To go' : 'Eat in'}</div>
           ${order.table ? `<div>Table: ${escapeHtml(order.table)}</div>` : ''}
-          <div>Date: ${new Date(order.createdAt).toLocaleString()}</div>
+          <div>Date: ${formatDateTime(order.createdAt)}</div>
         </div>
         <div class="divider"></div>
         <div class="items">

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, Box, Button, TextField, Paper, Table, TableHead, TableRow, TableCell, TableBody, FormControl, InputLabel, Select, MenuItem as MuiMenuItem } from '@mui/material';
 import { getReportsInRange, getAllItems, getAllCategories } from '../services/db';
+import { localYYYYMMDD } from '../lib/date';
 import type { MenuItem as MenuItemType, Category } from '../models/types';
 
 const ReportsPage: React.FC = () => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localYYYYMMDD();
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [reports, setReports] = useState<any[]>([]);

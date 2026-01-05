@@ -5,6 +5,7 @@ import { getOrder, updateOrder } from '../services/db';
 import type { Order } from '../models/types';
 import { QRCodeSVG } from 'qrcode.react';
 import { printOrder } from './OrderPrintTemplate';
+import { formatDateTime } from '../lib/date';
 
 const OrderPrintPage: React.FC = () => {
   const { orderId } = useParams();
@@ -52,7 +53,7 @@ const OrderPrintPage: React.FC = () => {
 
       <Typography variant="subtitle1" sx={{ mb: 1 }}>Order ID: {order.shortId}</Typography>
   <Typography variant="subtitle1" sx={{ mb: 1 }}>Order #: {order.orderNumber}</Typography>
-  <Typography variant="subtitle1" sx={{ mb: 1 }}>Date: {new Date(order.createdAt).toLocaleString()}</Typography>
+  <Typography variant="subtitle1" sx={{ mb: 1 }}>Date: {formatDateTime(order.createdAt)}</Typography>
   <Typography variant="subtitle1" sx={{ mb: 1 }}>Type: {order.orderType === 'TO_GO' ? 'To go' : 'Eat in'}</Typography>
   {order.table && <Typography variant="subtitle1" sx={{ mb: 1 }}>Table: {order.table}</Typography>}
       <Typography variant="subtitle2" sx={{ mb: 2 }}>Status: {order.status}</Typography>

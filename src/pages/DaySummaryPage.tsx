@@ -18,6 +18,8 @@ import {
   TableBody,
 } from '@mui/material';
 import { getOrdersByDate, finalizeDay, getAllItems, getAllCategories } from '../services/db';
+import { formatTime } from '../lib/date';
+import { localYYYYMMDD } from '../lib/date';
 import type { Order, PaymentMethod } from '../models/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -25,7 +27,7 @@ const DaySummaryPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localYYYYMMDD();
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const navigate = useNavigate();
 
@@ -271,7 +273,7 @@ const DaySummaryPage: React.FC = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Box>
                     <Typography sx={{ fontWeight: 'bold' }}>#{o.orderNumber} — {o.shortId}</Typography>
-                    <Typography variant="body2">${o.totalAmount.toFixed(2)} — {new Date(o.createdAt).toLocaleTimeString()}</Typography>
+                    <Typography variant="body2">${o.totalAmount.toFixed(2)} — {formatTime(o.createdAt)}</Typography>
                   </Box>
                   <Box>
                     <Button size="small" onClick={() => navigate(`/order/print/${o.id}`)}>Open</Button>

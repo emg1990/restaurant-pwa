@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, Box, List, ListItem, Button, Divider, Chip } from '@mui/material';
 import { getOrdersByDate, updateOrder } from '../services/db';
+import { formatTime } from '../lib/date';
 import type { Order } from '../models/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -60,7 +61,7 @@ const OrdersTodayPage: React.FC = () => {
                 <Box sx={{ cursor: 'pointer' }} onClick={() => navigate(`/order/print/${o.id}`)}>
                   <Typography sx={{ fontWeight: 'bold' }}>#{o.orderNumber} — {o.shortId}</Typography>
                   <Typography variant="body2">{desc}{more}</Typography>
-                  <Typography variant="caption" color="text.secondary">${o.totalAmount.toFixed(2)} — {new Date(o.createdAt).toLocaleTimeString()}</Typography>
+                  <Typography variant="caption" color="text.secondary">${o.totalAmount.toFixed(2)} — {formatTime(o.createdAt)}</Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
